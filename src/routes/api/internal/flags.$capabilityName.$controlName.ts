@@ -19,7 +19,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { getFlag, toggleFlag, setFlagState, updateFlagMeta, deleteFlag } from '@lib/flags-store'
 import { addHistoryEntry } from '@lib/flags-history-store'
 import type { ControlFlag, FlagStatus } from '@types'
-import { isAdmin } from '@middleware/auth'
+import { isAdmin, getSessionUser } from '@middleware/auth'
 
 // ── Audit helpers ─────────────────────────────────────────────────────────────
 
@@ -83,7 +83,7 @@ export const Route = createFileRoute(
 
       // ── Admin (SSO TODO) ──────────────────────────────────────────────────
       PATCH: async ({ params, request }) => {
-        if (!isAdmin(request)) {
+        if (!await isAdmin(request)) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -102,7 +102,8 @@ export const Route = createFileRoute(
           /* no body — plain toggle */
         }
 
-        const updatedBy = body.updatedBy ?? 'system'
+        const sessionUser = await getSessionUser(request)
+        const updatedBy = body.updatedBy ?? sessionUser?.upn ?? sessionUser?.name ?? 'system'
 
         // Read the flag before any changes so we can diff for the audit description
         const before = await getFlag(params.capabilityName, params.controlName)
@@ -163,7 +164,7 @@ export const Route = createFileRoute(
 
       // ── Admin: delete ─────────────────────────────────────────────────────
       DELETE: async ({ params, request }) => {
-        if (!isAdmin(request)) {
+        if (!await isAdmin(request)) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
         const deleted = await deleteFlag(params.capabilityName, params.controlName)
@@ -178,7 +179,7 @@ export const Route = createFileRoute(
 
       // ── Admin: update metadata (label / description / status) ────────────
       PUT: async ({ params, request }) => {
-        if (!isAdmin(request)) {
+        if (!await isAdmin(request)) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
         type PutBody = {
@@ -189,6 +190,8 @@ export const Route = createFileRoute(
           updatedBy?: string
         }
         const body: PutBody = await request.json()
+        const sessionUser = await getSessionUser(request)
+        const updatedBy = body.updatedBy ?? sessionUser?.upn ?? sessionUser?.name ?? 'system'
         // Only include fields that were actually sent — avoids overwriting
         // existing label/description with undefined (e.g. during soft delete)
         const patch: Partial<Pick<typeof body, 'label' | 'description' | 'status'>> = {}
@@ -197,13 +200,13 @@ export const Route = createFileRoute(
         if (body.status !== undefined) patch.status = body.status
         // Apply state change first if provided, then apply meta patch
         if (typeof body.state === 'boolean') {
-          await setFlagState(params.capabilityName, params.controlName, body.state, body.updatedBy ?? 'system')
+          await setFlagState(params.capabilityName, params.controlName, body.state, updatedBy)
         }
         const flag = await updateFlagMeta(
           params.capabilityName,
           params.controlName,
           patch,
-          body.updatedBy ?? 'system',
+          updatedBy,
         )
         if (!flag) {
           return Response.json(

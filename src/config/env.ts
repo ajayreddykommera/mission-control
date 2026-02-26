@@ -39,6 +39,33 @@ export const env = {
   },
 } as const
 
+// ── OIDC / SSO (server-side, runtime only) ───────────────────────────────────
+// All accessed lazily (getter) so missing vars only throw when OIDC is used.
+// Set OIDC_ISSUER_URL + OIDC_CLIENT_ID + SESSION_SECRET to enable SSO.
+// If any are absent the app falls back to open access (local dev mode).
+
+/** true when all required OIDC vars are present — gates SSO enforcement */
+export const oidcEnabled = Boolean(
+  process.env['OIDC_ISSUER_URL'] &&
+  process.env['OIDC_CLIENT_ID'] &&
+  process.env['SESSION_SECRET'],
+)
+
+export const oidcEnv = {
+  /** OIDC provider issuer URL, e.g. https://login.microsoftonline.com/{tenant}/v2.0 */
+  get OIDC_ISSUER_URL(): string { return required('OIDC_ISSUER_URL') },
+  get OIDC_CLIENT_ID(): string { return required('OIDC_CLIENT_ID') },
+  get OIDC_CLIENT_SECRET(): string { return required('OIDC_CLIENT_SECRET') },
+  /** Full callback URL registered with your identity provider */
+  get OIDC_REDIRECT_URI(): string { return required('OIDC_REDIRECT_URI') },
+  /** Where to send the user after logout (defaults to app root) */
+  OIDC_POST_LOGOUT_URL: optional('OIDC_POST_LOGOUT_URL', '/'),
+  /** Space-separated scopes (default: openid profile) */
+  OIDC_SCOPES: optional('OIDC_SCOPES', 'openid profile'),
+  /** Min 32-char random secret used to encrypt session cookies */
+  get SESSION_SECRET(): string { return required('SESSION_SECRET') },
+} as const
+
 // ── Client-side only (Vite build-time) ───────────────────────────────────────
 // These are injected by Vite at build time and available in the browser.
 // Set them in .env.local / CI environment variables (no VITE_ prefix needed —

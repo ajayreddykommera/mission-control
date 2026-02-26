@@ -12,7 +12,7 @@ export const Route = createFileRoute(
   server: {
     handlers: {
       GET: async ({ params, request }) => {
-        if (!isAdmin(request)) {
+        if (!await isAdmin(request)) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

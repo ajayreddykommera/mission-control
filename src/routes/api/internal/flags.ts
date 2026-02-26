@@ -7,7 +7,8 @@
  */
 import { createFileRoute } from '@tanstack/react-router'
 import { getAllFlags, upsertFlag } from '@lib/flags-store'
-import { isAdmin } from '@middleware/auth'
+import { addHistoryEntry } from '@lib/flags-history-store'
+import { isAdmin, getSessionUser } from '@middleware/auth'
 import type { FlagStatus } from '@types'
 
 export const Route = createFileRoute('/api/internal/flags')({
@@ -19,7 +20,7 @@ export const Route = createFileRoute('/api/internal/flags')({
       },
 
       POST: async ({ request }) => {
-        if (!isAdmin(request)) {
+        if (!await isAdmin(request)) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
         type CreateBody = {
@@ -35,6 +36,8 @@ export const Route = createFileRoute('/api/internal/flags')({
         if (!body.capabilityName || !body.controlName || !body.label) {
           return Response.json({ error: 'capabilityName, controlName and label are required' }, { status: 400 })
         }
+        const sessionUser = await getSessionUser(request)
+        const updatedBy = body.updatedBy ?? sessionUser?.upn ?? sessionUser?.name ?? 'admin'
         const flag = await upsertFlag({
           capabilityName: body.capabilityName,
           controlName: body.controlName,
@@ -42,10 +45,22 @@ export const Route = createFileRoute('/api/internal/flags')({
           description: body.description ?? '',
           state: body.state ?? false,
           status: body.status ?? 'active',
-          updatedBy: body.updatedBy ?? 'admin',
+          updatedBy,
           lastUpdatedAt: new Date().toISOString(),
           version: 1,
         })
+
+        await addHistoryEntry({
+          controlName: flag.controlName,
+          capabilityName: flag.capabilityName,
+          version: flag.version,
+          state: flag.state,
+          status: flag.status,
+          updatedBy: flag.updatedBy,
+          updatedAt: flag.lastUpdatedAt,
+          changeDescription: `Flag created — initial state: ${flag.state ? 'ON' : 'OFF'}, status: ${flag.status}`,
+        })
+
         return Response.json(flag, { status: 201 })
       },
     },

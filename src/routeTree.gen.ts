@@ -13,6 +13,10 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicFlagsRouteImport } from './routes/api/public/flags'
 import { Route as ApiInternalFlagsRouteImport } from './routes/api/internal/flags'
+import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
+import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
+import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
+import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiPublicFlagsCapabilityNameRouteImport } from './routes/api/public/flags.$capabilityName'
 import { Route as ApiInternalFlagsHistoryRouteImport } from './routes/api/internal/flags.history'
 import { Route as ApiInternalFlagsCapabilityNameRouteImport } from './routes/api/internal/flags.$capabilityName'
@@ -38,6 +42,26 @@ const ApiPublicFlagsRoute = ApiPublicFlagsRouteImport.update({
 const ApiInternalFlagsRoute = ApiInternalFlagsRouteImport.update({
   id: '/api/internal/flags',
   path: '/api/internal/flags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
+  id: '/api/auth/me',
+  path: '/api/auth/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
+  id: '/api/auth/logout',
+  path: '/api/auth/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthLoginRoute = ApiAuthLoginRouteImport.update({
+  id: '/api/auth/login',
+  path: '/api/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
+  id: '/api/auth/callback',
+  path: '/api/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicFlagsCapabilityNameRoute =
@@ -79,6 +103,10 @@ const ApiInternalFlagsCapabilityNameControlNameHistoryRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/me': typeof ApiAuthMeRoute
   '/api/internal/flags': typeof ApiInternalFlagsRouteWithChildren
   '/api/public/flags': typeof ApiPublicFlagsRouteWithChildren
   '/api/internal/flags/$capabilityName': typeof ApiInternalFlagsCapabilityNameRouteWithChildren
@@ -91,6 +119,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/me': typeof ApiAuthMeRoute
   '/api/internal/flags': typeof ApiInternalFlagsRouteWithChildren
   '/api/public/flags': typeof ApiPublicFlagsRouteWithChildren
   '/api/internal/flags/$capabilityName': typeof ApiInternalFlagsCapabilityNameRouteWithChildren
@@ -104,6 +136,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/me': typeof ApiAuthMeRoute
   '/api/internal/flags': typeof ApiInternalFlagsRouteWithChildren
   '/api/public/flags': typeof ApiPublicFlagsRouteWithChildren
   '/api/internal/flags/$capabilityName': typeof ApiInternalFlagsCapabilityNameRouteWithChildren
@@ -118,6 +154,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/history'
+    | '/api/auth/callback'
+    | '/api/auth/login'
+    | '/api/auth/logout'
+    | '/api/auth/me'
     | '/api/internal/flags'
     | '/api/public/flags'
     | '/api/internal/flags/$capabilityName'
@@ -130,6 +170,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/history'
+    | '/api/auth/callback'
+    | '/api/auth/login'
+    | '/api/auth/logout'
+    | '/api/auth/me'
     | '/api/internal/flags'
     | '/api/public/flags'
     | '/api/internal/flags/$capabilityName'
@@ -142,6 +186,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/history'
+    | '/api/auth/callback'
+    | '/api/auth/login'
+    | '/api/auth/logout'
+    | '/api/auth/me'
     | '/api/internal/flags'
     | '/api/public/flags'
     | '/api/internal/flags/$capabilityName'
@@ -155,6 +203,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HistoryRoute: typeof HistoryRoute
+  ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
+  ApiAuthLoginRoute: typeof ApiAuthLoginRoute
+  ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
+  ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiInternalFlagsRoute: typeof ApiInternalFlagsRouteWithChildren
   ApiPublicFlagsRoute: typeof ApiPublicFlagsRouteWithChildren
 }
@@ -187,6 +239,34 @@ declare module '@tanstack/react-router' {
       path: '/api/internal/flags'
       fullPath: '/api/internal/flags'
       preLoaderRoute: typeof ApiInternalFlagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/me': {
+      id: '/api/auth/me'
+      path: '/api/auth/me'
+      fullPath: '/api/auth/me'
+      preLoaderRoute: typeof ApiAuthMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/logout': {
+      id: '/api/auth/logout'
+      path: '/api/auth/logout'
+      fullPath: '/api/auth/logout'
+      preLoaderRoute: typeof ApiAuthLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/login': {
+      id: '/api/auth/login'
+      path: '/api/auth/login'
+      fullPath: '/api/auth/login'
+      preLoaderRoute: typeof ApiAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/callback': {
+      id: '/api/auth/callback'
+      path: '/api/auth/callback'
+      fullPath: '/api/auth/callback'
+      preLoaderRoute: typeof ApiAuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/flags/$capabilityName': {
@@ -309,6 +389,10 @@ const ApiPublicFlagsRouteWithChildren = ApiPublicFlagsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HistoryRoute: HistoryRoute,
+  ApiAuthCallbackRoute: ApiAuthCallbackRoute,
+  ApiAuthLoginRoute: ApiAuthLoginRoute,
+  ApiAuthLogoutRoute: ApiAuthLogoutRoute,
+  ApiAuthMeRoute: ApiAuthMeRoute,
   ApiInternalFlagsRoute: ApiInternalFlagsRouteWithChildren,
   ApiPublicFlagsRoute: ApiPublicFlagsRouteWithChildren,
 }

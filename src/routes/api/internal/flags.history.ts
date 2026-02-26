@@ -10,7 +10,7 @@ export const Route = createFileRoute('/api/internal/flags/history')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!isAdmin(request)) {
+        if (!await isAdmin(request)) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
         const history = await getAllHistory()
