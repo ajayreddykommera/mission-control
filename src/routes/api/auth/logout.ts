@@ -22,7 +22,7 @@ export const Route = createFileRoute('/api/auth/logout')({
         let logoutUrl = '/'
         if (oidcEnabled) {
           try {
-            const config = await getOidcConfig()
+            const config = getOidcConfig()
             logoutUrl = buildLogoutUrl(config, idToken)
           } catch {
             // If discovery fails during logout, just redirect home

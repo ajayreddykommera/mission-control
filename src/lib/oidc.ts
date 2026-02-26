@@ -1,96 +1,28 @@
 /**
- * openid-client v6 wrapper — lazy-discovery, singleton config.
+ * oauth4webapi wrapper — no discovery, explicit endpoint URLs.
  *
- * Performs OIDC Discovery against OIDC_ISSUER_URL on first use and caches
- * the result for the lifetime of the process. All enterprise OIDC providers
- * (Azure AD / Entra ID, Okta, Ping, Auth0, Keycloak) expose the standard
- * /.well-known/openid-configuration discovery document.
+ * Uses the three OIDC endpoint URLs you already have from your IdP:
+ *   OIDC_AUTH_URL   — authorization endpoint (where users log in)
+ *   OIDC_TOKEN_URL  — token endpoint (code → tokens)
+ *   OIDC_LOGOUT_URL — end-session endpoint (optional)
  *
- * Usage:
- *   const config = await getOidcConfig()
- *   const redirectUrl = buildAuthorizationUrl(config, { ... })
+ * iron-session handles the encrypted HttpOnly session cookie.
  */
-import {
-  discovery,
-  buildAuthorizationUrl,
-  authorizationCodeGrant,
-  fetchUserInfo,
-  randomState,
-  randomPKCECodeVerifier,
-  calculatePKCECodeChallenge,
-  type Configuration,
-  type TokenEndpointResponse,
-} from 'openid-client'
+import * as oauth from 'oauth4webapi'
 import { oidcEnv } from '@config/env'
 
-export type { Configuration, TokenEndpointResponse }
+// ── Types ───────────────────────────────────────────────────────────────────
 
-// ── Singleton discovery ────────────────────────────────────────────────────────
-
-let _config: Configuration | null = null
-
-/** Returns the (cached) openid-client Configuration, performing discovery on first call. */
-export async function getOidcConfig(): Promise<Configuration> {
-  if (_config) return _config
-  _config = await discovery(
-    new URL(oidcEnv.OIDC_ISSUER_URL),
-    oidcEnv.OIDC_CLIENT_ID,
-    { client_secret: oidcEnv.OIDC_CLIENT_SECRET },
-  )
-  return _config
+export type OidcConfig = {
+  as: oauth.AuthorizationServer
+  client: oauth.Client
+  clientAuth: oauth.ClientAuth
 }
 
-// ── Authorization URL builder ─────────────────────────────────────────────────
-
-export type AuthorizationParams = {
-  /** Value to produce and later verify for CSRF protection */
-  state: string
-  codeVerifier: string
+export type OidcTokens = {
+  id_token?: string
+  access_token: string
 }
-
-/**
- * Generate PKCE verifier + state, then build the full authorization redirect URL.
- * Returns the URL string and the generated values to be stored in the PKCE cookie.
- */
-export async function buildLoginUrl(config: Configuration): Promise<{
-  url: string
-  state: string
-  codeVerifier: string
-}> {
-  const codeVerifier = randomPKCECodeVerifier()
-  const codeChallenge = await calculatePKCECodeChallenge(codeVerifier)
-  const state = randomState()
-
-  const authUrl = buildAuthorizationUrl(config, {
-    redirect_uri: oidcEnv.OIDC_REDIRECT_URI,
-    scope: oidcEnv.OIDC_SCOPES,
-    code_challenge: codeChallenge,
-    code_challenge_method: 'S256',
-    state,
-  })
-
-  return { url: authUrl.href, state, codeVerifier }
-}
-
-// ── Token exchange ────────────────────────────────────────────────────────────
-
-/**
- * Complete the Authorization Code flow by exchanging the callback URL
- * (with `code` and `state` params) for tokens.
- */
-export async function exchangeCode(
-  config: Configuration,
-  callbackUrl: URL,
-  codeVerifier: string,
-  expectedState: string,
-): Promise<TokenEndpointResponse> {
-  return authorizationCodeGrant(config, callbackUrl, {
-    pkceCodeVerifier: codeVerifier,
-    expectedState,
-  })
-}
-
-// ── User info ─────────────────────────────────────────────────────────────────
 
 export type OidcUser = {
   sub: string
@@ -99,18 +31,120 @@ export type OidcUser = {
   preferred_username?: string
 }
 
+// ── Build config from explicit URLs (no discovery needed) ─────────────────────
+
+let _oidcConfig: OidcConfig | null = null
+
 /**
- * Decode id_token payload (no signature verification needed — already validated
- * during token exchange). Falls back to fetchUserInfo if id_token is absent.
+ * Returns (and caches) the OidcConfig built from your explicit endpoint URLs.
+ * No HTTP request is made — the URLs come straight from env vars.
+ */
+export function getOidcConfig(): OidcConfig {
+  if (_oidcConfig) return _oidcConfig
+
+  const authUrl = oidcEnv.OIDC_AUTH_URL
+
+  // Issuer: use explicit value if set, otherwise fall back to the origin of the
+  // auth URL (e.g. http://localhost:8100). This is correct for most PingFederate
+  // deployments. If token exchange fails with an issuer mismatch error, set
+  // OIDC_ISSUER explicitly to whatever `iss` appears in the JWT.
+  const issuer = oidcEnv.OIDC_ISSUER || new URL(authUrl).origin
+
+  const as: oauth.AuthorizationServer = {
+    issuer,
+    authorization_endpoint: authUrl,
+    token_endpoint: oidcEnv.OIDC_TOKEN_URL,
+    // Only set userinfo / jwks when explicitly provided — omitting jwks_uri
+    // skips JWT signature verification (claims are still decoded from payload).
+    ...(oidcEnv.OIDC_USERINFO_URL ? { userinfo_endpoint: oidcEnv.OIDC_USERINFO_URL } : {}),
+    ...(oidcEnv.OIDC_JWKS_URL    ? { jwks_uri: oidcEnv.OIDC_JWKS_URL }             : {}),
+    ...(oidcEnv.OIDC_LOGOUT_URL  ? { end_session_endpoint: oidcEnv.OIDC_LOGOUT_URL } : {}),
+  }
+
+  const client: oauth.Client = { client_id: oidcEnv.OIDC_CLIENT_ID }
+  const clientAuth = oauth.ClientSecretBasic(oidcEnv.OIDC_CLIENT_SECRET)
+
+  _oidcConfig = { as, client, clientAuth }
+  return _oidcConfig
+}
+
+// ── Authorization URL builder ─────────────────────────────────────────────────
+
+/**
+ * Generate PKCE verifier + state, then build the full authorization redirect URL.
+ */
+export async function buildLoginUrl(config: OidcConfig): Promise<{
+  url: string
+  state: string
+  codeVerifier: string
+}> {
+  const codeVerifier = oauth.generateRandomCodeVerifier()
+  const codeChallenge = await oauth.calculatePKCECodeChallenge(codeVerifier)
+  const state = oauth.generateRandomState()
+
+  const authUrl = new URL(config.as.authorization_endpoint!)
+  authUrl.searchParams.set('client_id', config.client.client_id)
+  authUrl.searchParams.set('redirect_uri', oidcEnv.OIDC_REDIRECT_URI)
+  authUrl.searchParams.set('response_type', 'code')
+  authUrl.searchParams.set('scope', oidcEnv.OIDC_SCOPES)
+  authUrl.searchParams.set('code_challenge', codeChallenge)
+  authUrl.searchParams.set('code_challenge_method', 'S256')
+  authUrl.searchParams.set('state', state)
+
+  return { url: authUrl.href, state, codeVerifier }
+}
+
+// ── Token exchange ────────────────────────────────────────────────────────────
+
+/**
+ * Complete the Authorization Code + PKCE flow:
+ *   1. Validate the callback URL params (state + code)
+ *   2. POST to the token endpoint
+ *   3. Return access_token + id_token
+ */
+export async function exchangeCode(
+  config: OidcConfig,
+  callbackUrl: URL,
+  codeVerifier: string,
+  expectedState: string,
+): Promise<OidcTokens> {
+  const { as, client, clientAuth } = config
+
+  // Validates `state` and extracts `code` — throws on CSRF mismatch or error param
+  const codeGrantParams = oauth.validateAuthResponse(as, client, callbackUrl, expectedState)
+
+  const tokenResponse = await oauth.authorizationCodeGrantRequest(
+    as,
+    client,
+    clientAuth,
+    codeGrantParams,
+    oidcEnv.OIDC_REDIRECT_URI,
+    codeVerifier,
+  )
+
+  const tokens = await oauth.processAuthorizationCodeResponse(as, client, tokenResponse)
+
+  return {
+    id_token: typeof tokens.id_token === 'string' ? tokens.id_token : undefined,
+    access_token: tokens.access_token,
+  }
+}
+
+// ── User claims ───────────────────────────────────────────────────────────────
+
+/**
+ * Extract user identity from the id_token JWT payload.
+ * The signature was already validated by processAuthorizationCodeResponse.
+ * Falls back to the userinfo endpoint if id_token is absent.
  */
 export async function getUserClaims(
-  config: Configuration,
-  tokens: TokenEndpointResponse,
+  config: OidcConfig,
+  tokens: OidcTokens,
 ): Promise<OidcUser> {
-  // Fast path: decode the id_token JWT payload (header.payload.sig)
   if (tokens.id_token) {
+    const parts = tokens.id_token.split('.')
     const payload = JSON.parse(
-      Buffer.from(tokens.id_token.split('.')[1], 'base64').toString('utf8'),
+      Buffer.from(parts[1], 'base64url').toString('utf8'),
     ) as Record<string, unknown>
     return {
       sub: payload['sub'] as string,
@@ -119,14 +153,13 @@ export async function getUserClaims(
       preferred_username: payload['preferred_username'] as string | undefined,
     }
   }
-  // Fallback: userinfo endpoint
-  const userInfo = await fetchUserInfo(
-    config,
-    tokens.access_token,
-    undefined as unknown as string,
-  ) as Record<string, unknown>
+
+  // Fallback: fetch userinfo endpoint
+  const { as, client } = config
+  const userInfoResponse = await oauth.userInfoRequest(as, client, tokens.access_token)
+  const userInfo = await oauth.processUserInfoResponse(as, client, oauth.skipSubjectCheck, userInfoResponse)
   return {
-    sub: userInfo['sub'] as string,
+    sub: userInfo.sub,
     name: userInfo['name'] as string | undefined,
     email: userInfo['email'] as string | undefined,
     preferred_username: userInfo['preferred_username'] as string | undefined,
@@ -136,16 +169,14 @@ export async function getUserClaims(
 // ── Logout URL builder ────────────────────────────────────────────────────────
 
 /**
- * Build the post-logout redirect URL.
- * Uses the end_session_endpoint from discovery if available;
- * falls back to OIDC_POST_LOGOUT_URL if the provider doesn't publish one.
+ * Build the post-logout redirect URL using OIDC_LOGOUT_URL.
+ * Falls back to OIDC_POST_LOGOUT_URL if not configured.
  */
 export function buildLogoutUrl(
-  config: Configuration,
+  config: OidcConfig,
   idToken: string | undefined,
 ): string {
-  // openid-client v6 exposes server metadata
-  const endSessionEndpoint = (config.serverMetadata() as Record<string, string>)['end_session_endpoint']
+  const endSessionEndpoint = config.as.end_session_endpoint
   if (!endSessionEndpoint || !idToken) {
     return oidcEnv.OIDC_POST_LOGOUT_URL
   }

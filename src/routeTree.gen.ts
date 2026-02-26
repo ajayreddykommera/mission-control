@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicFlagsRouteImport } from './routes/api/public/flags'
@@ -20,10 +21,16 @@ import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiPublicFlagsCapabilityNameRouteImport } from './routes/api/public/flags.$capabilityName'
 import { Route as ApiInternalFlagsHistoryRouteImport } from './routes/api/internal/flags.history'
 import { Route as ApiInternalFlagsCapabilityNameRouteImport } from './routes/api/internal/flags.$capabilityName'
+import { Route as RefundcontrolsLoginOauth2CodeRefundcontrolsRouteImport } from './routes/refundcontrols/login/oauth2/code/refundcontrols'
 import { Route as ApiPublicFlagsCapabilityNameControlNameRouteImport } from './routes/api/public/flags.$capabilityName.$controlName'
 import { Route as ApiInternalFlagsCapabilityNameControlNameRouteImport } from './routes/api/internal/flags.$capabilityName.$controlName'
 import { Route as ApiInternalFlagsCapabilityNameControlNameHistoryRouteImport } from './routes/api/internal/flags.$capabilityName.$controlName.history'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -81,6 +88,12 @@ const ApiInternalFlagsCapabilityNameRoute =
     path: '/$capabilityName',
     getParentRoute: () => ApiInternalFlagsRoute,
   } as any)
+const RefundcontrolsLoginOauth2CodeRefundcontrolsRoute =
+  RefundcontrolsLoginOauth2CodeRefundcontrolsRouteImport.update({
+    id: '/refundcontrols/login/oauth2/code/refundcontrols',
+    path: '/refundcontrols/login/oauth2/code/refundcontrols',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFlagsCapabilityNameControlNameRoute =
   ApiPublicFlagsCapabilityNameControlNameRouteImport.update({
     id: '/$controlName',
@@ -103,6 +116,7 @@ const ApiInternalFlagsCapabilityNameControlNameHistoryRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
+  '/login': typeof LoginRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -114,11 +128,13 @@ export interface FileRoutesByFullPath {
   '/api/public/flags/$capabilityName': typeof ApiPublicFlagsCapabilityNameRouteWithChildren
   '/api/internal/flags/$capabilityName/$controlName': typeof ApiInternalFlagsCapabilityNameControlNameRouteWithChildren
   '/api/public/flags/$capabilityName/$controlName': typeof ApiPublicFlagsCapabilityNameControlNameRoute
+  '/refundcontrols/login/oauth2/code/refundcontrols': typeof RefundcontrolsLoginOauth2CodeRefundcontrolsRoute
   '/api/internal/flags/$capabilityName/$controlName/history': typeof ApiInternalFlagsCapabilityNameControlNameHistoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
+  '/login': typeof LoginRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -130,12 +146,14 @@ export interface FileRoutesByTo {
   '/api/public/flags/$capabilityName': typeof ApiPublicFlagsCapabilityNameRouteWithChildren
   '/api/internal/flags/$capabilityName/$controlName': typeof ApiInternalFlagsCapabilityNameControlNameRouteWithChildren
   '/api/public/flags/$capabilityName/$controlName': typeof ApiPublicFlagsCapabilityNameControlNameRoute
+  '/refundcontrols/login/oauth2/code/refundcontrols': typeof RefundcontrolsLoginOauth2CodeRefundcontrolsRoute
   '/api/internal/flags/$capabilityName/$controlName/history': typeof ApiInternalFlagsCapabilityNameControlNameHistoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
+  '/login': typeof LoginRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -147,6 +165,7 @@ export interface FileRoutesById {
   '/api/public/flags/$capabilityName': typeof ApiPublicFlagsCapabilityNameRouteWithChildren
   '/api/internal/flags/$capabilityName/$controlName': typeof ApiInternalFlagsCapabilityNameControlNameRouteWithChildren
   '/api/public/flags/$capabilityName/$controlName': typeof ApiPublicFlagsCapabilityNameControlNameRoute
+  '/refundcontrols/login/oauth2/code/refundcontrols': typeof RefundcontrolsLoginOauth2CodeRefundcontrolsRoute
   '/api/internal/flags/$capabilityName/$controlName/history': typeof ApiInternalFlagsCapabilityNameControlNameHistoryRoute
 }
 export interface FileRouteTypes {
@@ -154,6 +173,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/history'
+    | '/login'
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
@@ -165,11 +185,13 @@ export interface FileRouteTypes {
     | '/api/public/flags/$capabilityName'
     | '/api/internal/flags/$capabilityName/$controlName'
     | '/api/public/flags/$capabilityName/$controlName'
+    | '/refundcontrols/login/oauth2/code/refundcontrols'
     | '/api/internal/flags/$capabilityName/$controlName/history'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/history'
+    | '/login'
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
@@ -181,11 +203,13 @@ export interface FileRouteTypes {
     | '/api/public/flags/$capabilityName'
     | '/api/internal/flags/$capabilityName/$controlName'
     | '/api/public/flags/$capabilityName/$controlName'
+    | '/refundcontrols/login/oauth2/code/refundcontrols'
     | '/api/internal/flags/$capabilityName/$controlName/history'
   id:
     | '__root__'
     | '/'
     | '/history'
+    | '/login'
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
@@ -197,22 +221,32 @@ export interface FileRouteTypes {
     | '/api/public/flags/$capabilityName'
     | '/api/internal/flags/$capabilityName/$controlName'
     | '/api/public/flags/$capabilityName/$controlName'
+    | '/refundcontrols/login/oauth2/code/refundcontrols'
     | '/api/internal/flags/$capabilityName/$controlName/history'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HistoryRoute: typeof HistoryRoute
+  LoginRoute: typeof LoginRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiInternalFlagsRoute: typeof ApiInternalFlagsRouteWithChildren
   ApiPublicFlagsRoute: typeof ApiPublicFlagsRouteWithChildren
+  RefundcontrolsLoginOauth2CodeRefundcontrolsRoute: typeof RefundcontrolsLoginOauth2CodeRefundcontrolsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/history': {
       id: '/history'
       path: '/history'
@@ -289,6 +323,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/internal/flags/$capabilityName'
       preLoaderRoute: typeof ApiInternalFlagsCapabilityNameRouteImport
       parentRoute: typeof ApiInternalFlagsRoute
+    }
+    '/refundcontrols/login/oauth2/code/refundcontrols': {
+      id: '/refundcontrols/login/oauth2/code/refundcontrols'
+      path: '/refundcontrols/login/oauth2/code/refundcontrols'
+      fullPath: '/refundcontrols/login/oauth2/code/refundcontrols'
+      preLoaderRoute: typeof RefundcontrolsLoginOauth2CodeRefundcontrolsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/flags/$capabilityName/$controlName': {
       id: '/api/public/flags/$capabilityName/$controlName'
@@ -389,12 +430,15 @@ const ApiPublicFlagsRouteWithChildren = ApiPublicFlagsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HistoryRoute: HistoryRoute,
+  LoginRoute: LoginRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
   ApiInternalFlagsRoute: ApiInternalFlagsRouteWithChildren,
   ApiPublicFlagsRoute: ApiPublicFlagsRouteWithChildren,
+  RefundcontrolsLoginOauth2CodeRefundcontrolsRoute:
+    RefundcontrolsLoginOauth2CodeRefundcontrolsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

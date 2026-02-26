@@ -18,15 +18,15 @@ export const Route = createFileRoute('/api/auth/login')({
     handlers: {
       GET: async ({ request }) => {
         if (!oidcEnabled) {
-          return Response.json(
-            { error: 'SSO is not configured. Set OIDC_ISSUER_URL, OIDC_CLIENT_ID and SESSION_SECRET.' },
-            { status: 503 },
-          )
+          return new Response(null, {
+            status: 302,
+            headers: { Location: '/login?error=SSO+is+not+configured.+Fill+in+OIDC+vars+in+your+.env+file.' },
+          })
         }
 
         const returnTo = new URL(request.url).searchParams.get('returnTo') ?? '/'
 
-        const config = await getOidcConfig()
+        const config = getOidcConfig()
         const { url, state, codeVerifier } = await buildLoginUrl(config)
 
         const pkceCookie = await makePkceCookie({ codeVerifier, state, returnTo })

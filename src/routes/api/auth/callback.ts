@@ -26,15 +26,15 @@ export const Route = createFileRoute('/api/auth/callback')({
 
         const pkce = await getPkceState(request)
         if (!pkce) {
-          return Response.json(
-            { error: "Missing or expired OIDC state. Please try logging in again." },
-            { status: 400 },
-          )
+          return new Response(null, {
+            status: 302,
+            headers: { Location: '/login?error=Session+expired.+Please+try+again.' },
+          })
         }
 
         let sessionCookie: string
         try {
-          const config = await getOidcConfig()
+          const config = getOidcConfig()
           const tokens = await exchangeCode(
             config,
             new URL(request.url),
@@ -54,11 +54,27 @@ export const Route = createFileRoute('/api/auth/callback')({
             idToken: tokens.id_token,
           })
         } catch (err) {
-          console.error('[auth/callback] token exchange failed:', err)
-          return Response.json(
-            { error: 'Authentication failed. Please try again.' },
-            { status: 502 },
-          )
+          const msg = err instanceof Error ? err.message : String(err)
+          console.error('[auth/callback] token exchange failed:', msg)
+
+          // Issuer mismatch hint: decode the raw JWT to show the actual `iss` value
+          if (msg.includes('iss') || msg.includes('issuer') || msg.includes('unexpected')) {
+            try {
+              const urlParams = new URL(request.url).searchParams
+              const code = urlParams.get('code')
+              if (code) {
+                console.error(
+                  '[auth/callback] HINT: set OIDC_ISSUER in your .env to the exact `iss` value in the token. ' +
+                  'Run: curl -s -X POST ' + process.env['OIDC_TOKEN_URL'] + ' ... and decode the id_token JWT payload.',
+                )
+              }
+            } catch { /* ignore */ }
+          }
+
+          return new Response(null, {
+            status: 302,
+            headers: { Location: `/login?error=${encodeURIComponent('Authentication failed: ' + msg)}` },
+          })
         }
 
         const headers = new Headers({ Location: pkce.returnTo ?? '/' })

@@ -41,19 +41,36 @@ export const env = {
 
 // ── OIDC / SSO (server-side, runtime only) ───────────────────────────────────
 // All accessed lazily (getter) so missing vars only throw when OIDC is used.
-// Set OIDC_ISSUER_URL + OIDC_CLIENT_ID + SESSION_SECRET to enable SSO.
+// Set OIDC_AUTH_URL + OIDC_CLIENT_ID + SESSION_SECRET to enable SSO.
 // If any are absent the app falls back to open access (local dev mode).
 
 /** true when all required OIDC vars are present — gates SSO enforcement */
 export const oidcEnabled = Boolean(
-  process.env['OIDC_ISSUER_URL'] &&
+  process.env['OIDC_AUTH_URL'] &&
   process.env['OIDC_CLIENT_ID'] &&
   process.env['SESSION_SECRET'],
 )
 
 export const oidcEnv = {
-  /** OIDC provider issuer URL, e.g. https://login.microsoftonline.com/{tenant}/v2.0 */
-  get OIDC_ISSUER_URL(): string { return required('OIDC_ISSUER_URL') },
+  /** Authorization endpoint — where users are sent to log in */
+  get OIDC_AUTH_URL(): string { return required('OIDC_AUTH_URL') },
+  /** Token endpoint — where the authorization code is exchanged for tokens */
+  get OIDC_TOKEN_URL(): string { return required('OIDC_TOKEN_URL') },
+  /** Userinfo endpoint — to fetch user claims when id_token lacks them (optional) */
+  OIDC_USERINFO_URL: optional('OIDC_USERINFO_URL', ''),
+  /**
+   * JWKS endpoint — used to verify JWT signatures (optional).
+   * If absent, JWT signature verification is skipped (claims are still decoded).
+   */
+  OIDC_JWKS_URL: optional('OIDC_JWKS_URL', ''),
+  /**
+   * Issuer identifier — must match the `iss` claim in the JWT.
+   * Optional: if not set, defaults to the origin of OIDC_AUTH_URL.
+   * (e.g. http://localhost:8100/as/authorization.oauth2 → http://localhost:8100)
+   */
+  OIDC_ISSUER: optional('OIDC_ISSUER', ''),
+  /** End-session endpoint — where users are sent to log out (optional) */
+  OIDC_LOGOUT_URL: optional('OIDC_LOGOUT_URL', ''),
   get OIDC_CLIENT_ID(): string { return required('OIDC_CLIENT_ID') },
   get OIDC_CLIENT_SECRET(): string { return required('OIDC_CLIENT_SECRET') },
   /** Full callback URL registered with your identity provider */

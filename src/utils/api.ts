@@ -5,9 +5,28 @@
 
 const BASE = ''  // same origin — update if API moves to a different host
 
+/**
+ * Called on any 401 response from the API.
+ * Redirects the browser to /login so the root guard picks it up and forwards
+ * to the IdP. The current path is preserved as `returnTo` so the user lands
+ * back here after authenticating.
+ */
+function handleUnauthorized(): never {
+  if (typeof window !== 'undefined') {
+    const returnTo = encodeURIComponent(window.location.pathname + window.location.search)
+    window.location.href = `/login?returnTo=${returnTo}`
+  }
+  throw new Error('Session expired. Redirecting to login…')
+}
+
+async function checkResponse(res: Response): Promise<Response> {
+  if (res.status === 401) handleUnauthorized()
+  return res
+}
+
 /** GET a JSON endpoint, throws on non-2xx */
 export async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`)
+  const res = await checkResponse(await fetch(`${BASE}${path}`))
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`)
@@ -17,11 +36,11 @@ export async function apiFetch<T>(path: string): Promise<T> {
 
 /** PATCH a JSON endpoint, throws on non-2xx */
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await checkResponse(await fetch(`${BASE}${path}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-  })
+  }))
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
@@ -31,11 +50,11 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
 
 /** PUT a JSON endpoint, throws on non-2xx */
 export async function apiPut<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await checkResponse(await fetch(`${BASE}${path}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-  })
+  }))
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
@@ -45,7 +64,7 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
 
 /** DELETE an endpoint, throws on non-2xx */
 export async function apiDelete(path: string): Promise<void> {
-  const res = await fetch(`${BASE}${path}`, { method: 'DELETE' })
+  const res = await checkResponse(await fetch(`${BASE}${path}`, { method: 'DELETE' }))
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
@@ -54,11 +73,11 @@ export async function apiDelete(path: string): Promise<void> {
 
 /** POST a JSON endpoint, throws on non-2xx */
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await checkResponse(await fetch(`${BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-  })
+  }))
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)

@@ -2,7 +2,7 @@
  * AppHeader — fixed top bar with logo + app name on the left,
  * user info and logout button on the right.
  */
-import { Link } from '@tanstack/react-router'
+import { Link, useRouteContext } from '@tanstack/react-router'
 import {
   Layout,
   Button,
@@ -24,20 +24,18 @@ const { Header } = Layout
 const { Text } = Typography
 
 // ── Environment badge ────────────────────────────────────────────────────────
+
 const ENV_TAG: Record<AppEnv, { color: string; label: string }> = {
   dev:   { color: 'blue',   label: 'DEV' },
   stage: { color: 'orange', label: 'STAGE' },
   prod:  { color: 'green',  label: 'PROD' },
 }
 
-// ── Hardcoded user (replace with real auth later) ──────────────────────────
-const MOCK_USER = {
-  name: 'Ajay Reddy',
-  id: 'USR-00142',
-}
-
 export default function AppHeader() {
   const { token } = theme.useToken()
+  // User comes from root route's beforeLoad context (set server-side each request)
+  const context = useRouteContext({ from: '__root__' }) as { user?: { name: string; email?: string; upn?: string } }
+  const user = context?.user
 
   return (
     <Header
@@ -94,10 +92,10 @@ export default function AppHeader() {
         />
         <div style={{ lineHeight: 1.3 }}>
           <Text strong style={{ display: 'block', fontSize: 13 }}>
-            {MOCK_USER.name}
+            {user?.name ?? 'Guest'}
           </Text>
           <Text type="secondary" style={{ fontSize: 11 }}>
-            {MOCK_USER.id}
+            {user?.email ?? user?.upn ?? ''}
           </Text>
         </div>
         <Divider type="vertical" style={{ margin: 0 }} />
@@ -106,10 +104,7 @@ export default function AppHeader() {
           icon={<LogoutOutlined />}
           danger
           size="small"
-          onClick={() => {
-            // TODO: wire to real auth logout
-            console.log('logout')
-          }}
+          href="/api/auth/logout"
         >
           Logout
         </Button>
