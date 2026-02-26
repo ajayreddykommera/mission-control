@@ -5,7 +5,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getFlagsByCapability } from '@lib/flags-store'
 
-export const Route = createFileRoute('/api/flags/$capabilityName')({
+export const Route = createFileRoute('/api/internal/flags/$capabilityName')({
   server: {
     handlers: {
       GET: async ({ params }) => {

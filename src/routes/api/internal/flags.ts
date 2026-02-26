@@ -10,7 +10,7 @@ import { getAllFlags, upsertFlag } from '@lib/flags-store'
 import { isAdmin } from '@middleware/auth'
 import type { FlagStatus } from '@types'
 
-export const Route = createFileRoute('/api/flags')({
+export const Route = createFileRoute('/api/internal/flags')({
   server: {
     handlers: {
       GET: async () => {

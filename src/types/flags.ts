@@ -52,3 +52,20 @@ export interface ControlFlagHistory {
   /** Human-readable description of what changed */
   changeDescription: string
 }
+
+// ── PublicFlag ───────────────────────────────────────────────────────────────
+// Minimal projection returned by the public /api/public/flags/* endpoints.
+// Only active flags are ever included; sensitive operational fields are omitted.
+
+export interface PublicFlag {
+  /** Capability group this flag belongs to */
+  capabilityName: string
+  /** Unique name of the control within a capability */
+  controlName: string
+  /** Human-readable label */
+  label: string
+  /** Toggle state — true = enabled, false = disabled */
+  state: boolean
+  /** Monotonically increasing version counter */
+  version: number
+}

@@ -11,11 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiFlagsRouteImport } from './routes/api/flags'
-import { Route as ApiFlagsHistoryRouteImport } from './routes/api/flags.history'
-import { Route as ApiFlagsCapabilityNameRouteImport } from './routes/api/flags.$capabilityName'
-import { Route as ApiFlagsCapabilityNameControlNameRouteImport } from './routes/api/flags.$capabilityName.$controlName'
-import { Route as ApiFlagsCapabilityNameControlNameHistoryRouteImport } from './routes/api/flags.$capabilityName.$controlName.history'
+import { Route as ApiPublicFlagsRouteImport } from './routes/api/public/flags'
+import { Route as ApiInternalFlagsRouteImport } from './routes/api/internal/flags'
+import { Route as ApiPublicFlagsCapabilityNameRouteImport } from './routes/api/public/flags.$capabilityName'
+import { Route as ApiInternalFlagsHistoryRouteImport } from './routes/api/internal/flags.history'
+import { Route as ApiInternalFlagsCapabilityNameRouteImport } from './routes/api/internal/flags.$capabilityName'
+import { Route as ApiPublicFlagsCapabilityNameControlNameRouteImport } from './routes/api/public/flags.$capabilityName.$controlName'
+import { Route as ApiInternalFlagsCapabilityNameControlNameRouteImport } from './routes/api/internal/flags.$capabilityName.$controlName'
+import { Route as ApiInternalFlagsCapabilityNameControlNameHistoryRouteImport } from './routes/api/internal/flags.$capabilityName.$controlName.history'
 
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
@@ -27,96 +30,133 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiFlagsRoute = ApiFlagsRouteImport.update({
-  id: '/api/flags',
-  path: '/api/flags',
+const ApiPublicFlagsRoute = ApiPublicFlagsRouteImport.update({
+  id: '/api/public/flags',
+  path: '/api/public/flags',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiFlagsHistoryRoute = ApiFlagsHistoryRouteImport.update({
+const ApiInternalFlagsRoute = ApiInternalFlagsRouteImport.update({
+  id: '/api/internal/flags',
+  path: '/api/internal/flags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFlagsCapabilityNameRoute =
+  ApiPublicFlagsCapabilityNameRouteImport.update({
+    id: '/$capabilityName',
+    path: '/$capabilityName',
+    getParentRoute: () => ApiPublicFlagsRoute,
+  } as any)
+const ApiInternalFlagsHistoryRoute = ApiInternalFlagsHistoryRouteImport.update({
   id: '/history',
   path: '/history',
-  getParentRoute: () => ApiFlagsRoute,
+  getParentRoute: () => ApiInternalFlagsRoute,
 } as any)
-const ApiFlagsCapabilityNameRoute = ApiFlagsCapabilityNameRouteImport.update({
-  id: '/$capabilityName',
-  path: '/$capabilityName',
-  getParentRoute: () => ApiFlagsRoute,
-} as any)
-const ApiFlagsCapabilityNameControlNameRoute =
-  ApiFlagsCapabilityNameControlNameRouteImport.update({
+const ApiInternalFlagsCapabilityNameRoute =
+  ApiInternalFlagsCapabilityNameRouteImport.update({
+    id: '/$capabilityName',
+    path: '/$capabilityName',
+    getParentRoute: () => ApiInternalFlagsRoute,
+  } as any)
+const ApiPublicFlagsCapabilityNameControlNameRoute =
+  ApiPublicFlagsCapabilityNameControlNameRouteImport.update({
     id: '/$controlName',
     path: '/$controlName',
-    getParentRoute: () => ApiFlagsCapabilityNameRoute,
+    getParentRoute: () => ApiPublicFlagsCapabilityNameRoute,
   } as any)
-const ApiFlagsCapabilityNameControlNameHistoryRoute =
-  ApiFlagsCapabilityNameControlNameHistoryRouteImport.update({
+const ApiInternalFlagsCapabilityNameControlNameRoute =
+  ApiInternalFlagsCapabilityNameControlNameRouteImport.update({
+    id: '/$controlName',
+    path: '/$controlName',
+    getParentRoute: () => ApiInternalFlagsCapabilityNameRoute,
+  } as any)
+const ApiInternalFlagsCapabilityNameControlNameHistoryRoute =
+  ApiInternalFlagsCapabilityNameControlNameHistoryRouteImport.update({
     id: '/history',
     path: '/history',
-    getParentRoute: () => ApiFlagsCapabilityNameControlNameRoute,
+    getParentRoute: () => ApiInternalFlagsCapabilityNameControlNameRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
-  '/api/flags': typeof ApiFlagsRouteWithChildren
-  '/api/flags/$capabilityName': typeof ApiFlagsCapabilityNameRouteWithChildren
-  '/api/flags/history': typeof ApiFlagsHistoryRoute
-  '/api/flags/$capabilityName/$controlName': typeof ApiFlagsCapabilityNameControlNameRouteWithChildren
-  '/api/flags/$capabilityName/$controlName/history': typeof ApiFlagsCapabilityNameControlNameHistoryRoute
+  '/api/internal/flags': typeof ApiInternalFlagsRouteWithChildren
+  '/api/public/flags': typeof ApiPublicFlagsRouteWithChildren
+  '/api/internal/flags/$capabilityName': typeof ApiInternalFlagsCapabilityNameRouteWithChildren
+  '/api/internal/flags/history': typeof ApiInternalFlagsHistoryRoute
+  '/api/public/flags/$capabilityName': typeof ApiPublicFlagsCapabilityNameRouteWithChildren
+  '/api/internal/flags/$capabilityName/$controlName': typeof ApiInternalFlagsCapabilityNameControlNameRouteWithChildren
+  '/api/public/flags/$capabilityName/$controlName': typeof ApiPublicFlagsCapabilityNameControlNameRoute
+  '/api/internal/flags/$capabilityName/$controlName/history': typeof ApiInternalFlagsCapabilityNameControlNameHistoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
-  '/api/flags': typeof ApiFlagsRouteWithChildren
-  '/api/flags/$capabilityName': typeof ApiFlagsCapabilityNameRouteWithChildren
-  '/api/flags/history': typeof ApiFlagsHistoryRoute
-  '/api/flags/$capabilityName/$controlName': typeof ApiFlagsCapabilityNameControlNameRouteWithChildren
-  '/api/flags/$capabilityName/$controlName/history': typeof ApiFlagsCapabilityNameControlNameHistoryRoute
+  '/api/internal/flags': typeof ApiInternalFlagsRouteWithChildren
+  '/api/public/flags': typeof ApiPublicFlagsRouteWithChildren
+  '/api/internal/flags/$capabilityName': typeof ApiInternalFlagsCapabilityNameRouteWithChildren
+  '/api/internal/flags/history': typeof ApiInternalFlagsHistoryRoute
+  '/api/public/flags/$capabilityName': typeof ApiPublicFlagsCapabilityNameRouteWithChildren
+  '/api/internal/flags/$capabilityName/$controlName': typeof ApiInternalFlagsCapabilityNameControlNameRouteWithChildren
+  '/api/public/flags/$capabilityName/$controlName': typeof ApiPublicFlagsCapabilityNameControlNameRoute
+  '/api/internal/flags/$capabilityName/$controlName/history': typeof ApiInternalFlagsCapabilityNameControlNameHistoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
-  '/api/flags': typeof ApiFlagsRouteWithChildren
-  '/api/flags/$capabilityName': typeof ApiFlagsCapabilityNameRouteWithChildren
-  '/api/flags/history': typeof ApiFlagsHistoryRoute
-  '/api/flags/$capabilityName/$controlName': typeof ApiFlagsCapabilityNameControlNameRouteWithChildren
-  '/api/flags/$capabilityName/$controlName/history': typeof ApiFlagsCapabilityNameControlNameHistoryRoute
+  '/api/internal/flags': typeof ApiInternalFlagsRouteWithChildren
+  '/api/public/flags': typeof ApiPublicFlagsRouteWithChildren
+  '/api/internal/flags/$capabilityName': typeof ApiInternalFlagsCapabilityNameRouteWithChildren
+  '/api/internal/flags/history': typeof ApiInternalFlagsHistoryRoute
+  '/api/public/flags/$capabilityName': typeof ApiPublicFlagsCapabilityNameRouteWithChildren
+  '/api/internal/flags/$capabilityName/$controlName': typeof ApiInternalFlagsCapabilityNameControlNameRouteWithChildren
+  '/api/public/flags/$capabilityName/$controlName': typeof ApiPublicFlagsCapabilityNameControlNameRoute
+  '/api/internal/flags/$capabilityName/$controlName/history': typeof ApiInternalFlagsCapabilityNameControlNameHistoryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/history'
-    | '/api/flags'
-    | '/api/flags/$capabilityName'
-    | '/api/flags/history'
-    | '/api/flags/$capabilityName/$controlName'
-    | '/api/flags/$capabilityName/$controlName/history'
+    | '/api/internal/flags'
+    | '/api/public/flags'
+    | '/api/internal/flags/$capabilityName'
+    | '/api/internal/flags/history'
+    | '/api/public/flags/$capabilityName'
+    | '/api/internal/flags/$capabilityName/$controlName'
+    | '/api/public/flags/$capabilityName/$controlName'
+    | '/api/internal/flags/$capabilityName/$controlName/history'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/history'
-    | '/api/flags'
-    | '/api/flags/$capabilityName'
-    | '/api/flags/history'
-    | '/api/flags/$capabilityName/$controlName'
-    | '/api/flags/$capabilityName/$controlName/history'
+    | '/api/internal/flags'
+    | '/api/public/flags'
+    | '/api/internal/flags/$capabilityName'
+    | '/api/internal/flags/history'
+    | '/api/public/flags/$capabilityName'
+    | '/api/internal/flags/$capabilityName/$controlName'
+    | '/api/public/flags/$capabilityName/$controlName'
+    | '/api/internal/flags/$capabilityName/$controlName/history'
   id:
     | '__root__'
     | '/'
     | '/history'
-    | '/api/flags'
-    | '/api/flags/$capabilityName'
-    | '/api/flags/history'
-    | '/api/flags/$capabilityName/$controlName'
-    | '/api/flags/$capabilityName/$controlName/history'
+    | '/api/internal/flags'
+    | '/api/public/flags'
+    | '/api/internal/flags/$capabilityName'
+    | '/api/internal/flags/history'
+    | '/api/public/flags/$capabilityName'
+    | '/api/internal/flags/$capabilityName/$controlName'
+    | '/api/public/flags/$capabilityName/$controlName'
+    | '/api/internal/flags/$capabilityName/$controlName/history'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HistoryRoute: typeof HistoryRoute
-  ApiFlagsRoute: typeof ApiFlagsRouteWithChildren
+  ApiInternalFlagsRoute: typeof ApiInternalFlagsRouteWithChildren
+  ApiPublicFlagsRoute: typeof ApiPublicFlagsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -135,92 +175,142 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/flags': {
-      id: '/api/flags'
-      path: '/api/flags'
-      fullPath: '/api/flags'
-      preLoaderRoute: typeof ApiFlagsRouteImport
+    '/api/public/flags': {
+      id: '/api/public/flags'
+      path: '/api/public/flags'
+      fullPath: '/api/public/flags'
+      preLoaderRoute: typeof ApiPublicFlagsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/flags/history': {
-      id: '/api/flags/history'
-      path: '/history'
-      fullPath: '/api/flags/history'
-      preLoaderRoute: typeof ApiFlagsHistoryRouteImport
-      parentRoute: typeof ApiFlagsRoute
+    '/api/internal/flags': {
+      id: '/api/internal/flags'
+      path: '/api/internal/flags'
+      fullPath: '/api/internal/flags'
+      preLoaderRoute: typeof ApiInternalFlagsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/api/flags/$capabilityName': {
-      id: '/api/flags/$capabilityName'
+    '/api/public/flags/$capabilityName': {
+      id: '/api/public/flags/$capabilityName'
       path: '/$capabilityName'
-      fullPath: '/api/flags/$capabilityName'
-      preLoaderRoute: typeof ApiFlagsCapabilityNameRouteImport
-      parentRoute: typeof ApiFlagsRoute
+      fullPath: '/api/public/flags/$capabilityName'
+      preLoaderRoute: typeof ApiPublicFlagsCapabilityNameRouteImport
+      parentRoute: typeof ApiPublicFlagsRoute
     }
-    '/api/flags/$capabilityName/$controlName': {
-      id: '/api/flags/$capabilityName/$controlName'
-      path: '/$controlName'
-      fullPath: '/api/flags/$capabilityName/$controlName'
-      preLoaderRoute: typeof ApiFlagsCapabilityNameControlNameRouteImport
-      parentRoute: typeof ApiFlagsCapabilityNameRoute
-    }
-    '/api/flags/$capabilityName/$controlName/history': {
-      id: '/api/flags/$capabilityName/$controlName/history'
+    '/api/internal/flags/history': {
+      id: '/api/internal/flags/history'
       path: '/history'
-      fullPath: '/api/flags/$capabilityName/$controlName/history'
-      preLoaderRoute: typeof ApiFlagsCapabilityNameControlNameHistoryRouteImport
-      parentRoute: typeof ApiFlagsCapabilityNameControlNameRoute
+      fullPath: '/api/internal/flags/history'
+      preLoaderRoute: typeof ApiInternalFlagsHistoryRouteImport
+      parentRoute: typeof ApiInternalFlagsRoute
+    }
+    '/api/internal/flags/$capabilityName': {
+      id: '/api/internal/flags/$capabilityName'
+      path: '/$capabilityName'
+      fullPath: '/api/internal/flags/$capabilityName'
+      preLoaderRoute: typeof ApiInternalFlagsCapabilityNameRouteImport
+      parentRoute: typeof ApiInternalFlagsRoute
+    }
+    '/api/public/flags/$capabilityName/$controlName': {
+      id: '/api/public/flags/$capabilityName/$controlName'
+      path: '/$controlName'
+      fullPath: '/api/public/flags/$capabilityName/$controlName'
+      preLoaderRoute: typeof ApiPublicFlagsCapabilityNameControlNameRouteImport
+      parentRoute: typeof ApiPublicFlagsCapabilityNameRoute
+    }
+    '/api/internal/flags/$capabilityName/$controlName': {
+      id: '/api/internal/flags/$capabilityName/$controlName'
+      path: '/$controlName'
+      fullPath: '/api/internal/flags/$capabilityName/$controlName'
+      preLoaderRoute: typeof ApiInternalFlagsCapabilityNameControlNameRouteImport
+      parentRoute: typeof ApiInternalFlagsCapabilityNameRoute
+    }
+    '/api/internal/flags/$capabilityName/$controlName/history': {
+      id: '/api/internal/flags/$capabilityName/$controlName/history'
+      path: '/history'
+      fullPath: '/api/internal/flags/$capabilityName/$controlName/history'
+      preLoaderRoute: typeof ApiInternalFlagsCapabilityNameControlNameHistoryRouteImport
+      parentRoute: typeof ApiInternalFlagsCapabilityNameControlNameRoute
     }
   }
 }
 
-interface ApiFlagsCapabilityNameControlNameRouteChildren {
-  ApiFlagsCapabilityNameControlNameHistoryRoute: typeof ApiFlagsCapabilityNameControlNameHistoryRoute
+interface ApiInternalFlagsCapabilityNameControlNameRouteChildren {
+  ApiInternalFlagsCapabilityNameControlNameHistoryRoute: typeof ApiInternalFlagsCapabilityNameControlNameHistoryRoute
 }
 
-const ApiFlagsCapabilityNameControlNameRouteChildren: ApiFlagsCapabilityNameControlNameRouteChildren =
+const ApiInternalFlagsCapabilityNameControlNameRouteChildren: ApiInternalFlagsCapabilityNameControlNameRouteChildren =
   {
-    ApiFlagsCapabilityNameControlNameHistoryRoute:
-      ApiFlagsCapabilityNameControlNameHistoryRoute,
+    ApiInternalFlagsCapabilityNameControlNameHistoryRoute:
+      ApiInternalFlagsCapabilityNameControlNameHistoryRoute,
   }
 
-const ApiFlagsCapabilityNameControlNameRouteWithChildren =
-  ApiFlagsCapabilityNameControlNameRoute._addFileChildren(
-    ApiFlagsCapabilityNameControlNameRouteChildren,
+const ApiInternalFlagsCapabilityNameControlNameRouteWithChildren =
+  ApiInternalFlagsCapabilityNameControlNameRoute._addFileChildren(
+    ApiInternalFlagsCapabilityNameControlNameRouteChildren,
   )
 
-interface ApiFlagsCapabilityNameRouteChildren {
-  ApiFlagsCapabilityNameControlNameRoute: typeof ApiFlagsCapabilityNameControlNameRouteWithChildren
+interface ApiInternalFlagsCapabilityNameRouteChildren {
+  ApiInternalFlagsCapabilityNameControlNameRoute: typeof ApiInternalFlagsCapabilityNameControlNameRouteWithChildren
 }
 
-const ApiFlagsCapabilityNameRouteChildren: ApiFlagsCapabilityNameRouteChildren =
+const ApiInternalFlagsCapabilityNameRouteChildren: ApiInternalFlagsCapabilityNameRouteChildren =
   {
-    ApiFlagsCapabilityNameControlNameRoute:
-      ApiFlagsCapabilityNameControlNameRouteWithChildren,
+    ApiInternalFlagsCapabilityNameControlNameRoute:
+      ApiInternalFlagsCapabilityNameControlNameRouteWithChildren,
   }
 
-const ApiFlagsCapabilityNameRouteWithChildren =
-  ApiFlagsCapabilityNameRoute._addFileChildren(
-    ApiFlagsCapabilityNameRouteChildren,
+const ApiInternalFlagsCapabilityNameRouteWithChildren =
+  ApiInternalFlagsCapabilityNameRoute._addFileChildren(
+    ApiInternalFlagsCapabilityNameRouteChildren,
   )
 
-interface ApiFlagsRouteChildren {
-  ApiFlagsCapabilityNameRoute: typeof ApiFlagsCapabilityNameRouteWithChildren
-  ApiFlagsHistoryRoute: typeof ApiFlagsHistoryRoute
+interface ApiInternalFlagsRouteChildren {
+  ApiInternalFlagsCapabilityNameRoute: typeof ApiInternalFlagsCapabilityNameRouteWithChildren
+  ApiInternalFlagsHistoryRoute: typeof ApiInternalFlagsHistoryRoute
 }
 
-const ApiFlagsRouteChildren: ApiFlagsRouteChildren = {
-  ApiFlagsCapabilityNameRoute: ApiFlagsCapabilityNameRouteWithChildren,
-  ApiFlagsHistoryRoute: ApiFlagsHistoryRoute,
+const ApiInternalFlagsRouteChildren: ApiInternalFlagsRouteChildren = {
+  ApiInternalFlagsCapabilityNameRoute:
+    ApiInternalFlagsCapabilityNameRouteWithChildren,
+  ApiInternalFlagsHistoryRoute: ApiInternalFlagsHistoryRoute,
 }
 
-const ApiFlagsRouteWithChildren = ApiFlagsRoute._addFileChildren(
-  ApiFlagsRouteChildren,
+const ApiInternalFlagsRouteWithChildren =
+  ApiInternalFlagsRoute._addFileChildren(ApiInternalFlagsRouteChildren)
+
+interface ApiPublicFlagsCapabilityNameRouteChildren {
+  ApiPublicFlagsCapabilityNameControlNameRoute: typeof ApiPublicFlagsCapabilityNameControlNameRoute
+}
+
+const ApiPublicFlagsCapabilityNameRouteChildren: ApiPublicFlagsCapabilityNameRouteChildren =
+  {
+    ApiPublicFlagsCapabilityNameControlNameRoute:
+      ApiPublicFlagsCapabilityNameControlNameRoute,
+  }
+
+const ApiPublicFlagsCapabilityNameRouteWithChildren =
+  ApiPublicFlagsCapabilityNameRoute._addFileChildren(
+    ApiPublicFlagsCapabilityNameRouteChildren,
+  )
+
+interface ApiPublicFlagsRouteChildren {
+  ApiPublicFlagsCapabilityNameRoute: typeof ApiPublicFlagsCapabilityNameRouteWithChildren
+}
+
+const ApiPublicFlagsRouteChildren: ApiPublicFlagsRouteChildren = {
+  ApiPublicFlagsCapabilityNameRoute:
+    ApiPublicFlagsCapabilityNameRouteWithChildren,
+}
+
+const ApiPublicFlagsRouteWithChildren = ApiPublicFlagsRoute._addFileChildren(
+  ApiPublicFlagsRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HistoryRoute: HistoryRoute,
-  ApiFlagsRoute: ApiFlagsRouteWithChildren,
+  ApiInternalFlagsRoute: ApiInternalFlagsRouteWithChildren,
+  ApiPublicFlagsRoute: ApiPublicFlagsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

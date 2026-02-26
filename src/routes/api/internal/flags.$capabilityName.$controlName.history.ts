@@ -7,7 +7,7 @@ import { getHistory } from '@lib/flags-history-store'
 import { isAdmin } from '@middleware/auth'
 
 export const Route = createFileRoute(
-  '/api/flags/$capabilityName/$controlName/history',
+  '/api/internal/flags/$capabilityName/$controlName/history',
 )({
   server: {
     handlers: {

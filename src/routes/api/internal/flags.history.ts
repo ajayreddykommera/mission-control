@@ -6,7 +6,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { getAllHistory } from '@lib/flags-history-store'
 import { isAdmin } from '@middleware/auth'
 
-export const Route = createFileRoute('/api/flags/history')({
+export const Route = createFileRoute('/api/internal/flags/history')({
   server: {
     handlers: {
       GET: async ({ request }) => {
