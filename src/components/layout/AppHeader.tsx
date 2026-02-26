@@ -10,6 +10,7 @@ import {
   Typography,
   Space,
   Divider,
+  Tag,
   theme,
 } from 'antd'
 import {
@@ -17,9 +18,17 @@ import {
   UserOutlined,
   ControlOutlined,
 } from '@ant-design/icons'
+import { clientEnv, type AppEnv } from '@config/env'
 
 const { Header } = Layout
 const { Text } = Typography
+
+// ── Environment badge ────────────────────────────────────────────────────────
+const ENV_TAG: Record<AppEnv, { color: string; label: string }> = {
+  dev:   { color: 'blue',   label: 'DEV' },
+  stage: { color: 'orange', label: 'STAGE' },
+  prod:  { color: 'green',  label: 'PROD' },
+}
 
 // ── Hardcoded user (replace with real auth later) ──────────────────────────
 const MOCK_USER = {
@@ -68,6 +77,12 @@ export default function AppHeader() {
         <Text strong style={{ fontSize: 16, letterSpacing: '-0.3px' }}>
           Mission Control
         </Text>
+        <Tag
+          color={ENV_TAG[clientEnv.APP_ENV].color}
+          style={{ marginLeft: 4, fontWeight: 600, letterSpacing: '0.5px' }}
+        >
+          {ENV_TAG[clientEnv.APP_ENV].label}
+        </Tag>
       </Link>
 
       {/* Right — user info + logout */}

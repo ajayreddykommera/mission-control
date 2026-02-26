@@ -9,6 +9,9 @@ import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 
 const config = defineConfig({
+  // Expose these specific prefixes to import.meta.env without requiring VITE_.
+  // Keeps AZURE_* and other server secrets from leaking into the bundle.
+  envPrefix: ['APP_'],
   plugins: [
     devtools(),
     nitro({ rollupConfig: { external: [/^@sentry\//] } }),

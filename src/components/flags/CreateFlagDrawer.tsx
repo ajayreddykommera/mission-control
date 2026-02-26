@@ -10,6 +10,7 @@ import {
   Drawer,
   Form,
   Input,
+  AutoComplete,
   Select,
   Switch,
   Button,
@@ -17,7 +18,10 @@ import {
   Flex,
   Divider,
 } from 'antd'
+import { useEffect, useMemo, useRef } from 'react'
 import { PlusOutlined } from '@ant-design/icons'
+import { useQueryClient } from '@tanstack/react-query'
+import type { ControlFlag } from '@types'
 import type { useCreateFlag } from '@hooks/useFlags'
 
 interface CreateFlagDrawerProps {
@@ -28,10 +32,54 @@ interface CreateFlagDrawerProps {
 
 export default function CreateFlagDrawer({ open, onClose, createFlag }: CreateFlagDrawerProps) {
   const [form] = Form.useForm()
-  const stateValue = Form.useWatch('state', form)
+  const stateValue        = Form.useWatch('state', form)
+  const capabilityValue   = Form.useWatch('capabilityName', form)
+  const labelValue        = Form.useWatch('label', form)
+  const queryClient       = useQueryClient()
+  // Tracks whether the user has manually edited controlName — stops auto-slug.
+  const controlNameEdited = useRef(false)
+
+  // Derive existing capability names for AutoComplete suggestions.
+  const allFlags     = queryClient.getQueryData<ControlFlag[]>(['flags']) ?? []
+  const capabilities = useMemo(
+    () => [...new Set(allFlags.map((f) => f.capabilityName))].sort().map((c) => ({ value: c })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allFlags.length],
+  )
+
+  // Auto-slug: label → controlName (e.g. "Enable Checkout V2" → "enable-checkout-v2")
+  // Stops as soon as the user manually edits the controlName field.
+  useEffect(() => {
+    if (controlNameEdited.current) return
+    if (!labelValue) return
+    const slug = labelValue
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+    form.setFieldValue('controlName', slug)
+    form.validateFields(['controlName']).catch(() => { /* suppress */ })
+  }, [labelValue, form])
+
+  // Re-validate controlName whenever capabilityName changes so the
+  // duplicate check reflects the new PK immediately.
+  useEffect(() => {
+    form.validateFields(['controlName']).catch(() => { /* suppress */ })
+  }, [capabilityValue, form])
+
+  function isDuplicate(capabilityName: string, controlName: string): boolean {
+    const cached = queryClient.getQueryData<ControlFlag[]>(['flags']) ?? []
+    return cached.some(
+      (f) =>
+        f.capabilityName === capabilityName &&
+        f.controlName    === controlName    &&
+        f.status         !== 'deleted',
+    )
+  }
 
   function handleClose() {
     form.resetFields()
+    controlNameEdited.current = false
     onClose()
   }
 
@@ -93,19 +141,39 @@ export default function CreateFlagDrawer({ open, onClose, createFlag }: CreateFl
           ]}
           extra="Groups related flags together (e.g. payments, auth, onboarding)"
         >
-          <Input placeholder="e.g. payments" />
+          <AutoComplete
+            options={capabilities}
+            placeholder="e.g. payments"
+            filterOption={(input, opt) => (opt?.value ?? '').includes(input)}
+          />
         </Form.Item>
 
         <Form.Item
           name="controlName"
           label="Control Name"
+          validateTrigger={['onChange', 'onBlur']}
           rules={[
             { required: true, message: 'Required' },
             { pattern: /^[a-z0-9-]+$/, message: 'Lowercase letters, numbers and hyphens only' },
+            {
+              validator(_, value) {
+                if (!value) return Promise.resolve()
+                const capability = form.getFieldValue('capabilityName') as string | undefined
+                if (capability && isDuplicate(capability, value)) {
+                  return Promise.reject(
+                    new Error(`"${capability} / ${value}" already exists`),
+                  )
+                }
+                return Promise.resolve()
+              },
+            },
           ]}
           extra="Unique identifier within the capability (e.g. enable-checkout-v2)"
         >
-          <Input placeholder="e.g. enable-checkout-v2" />
+          <Input
+            placeholder="e.g. enable-checkout-v2"
+            onChange={() => { controlNameEdited.current = true }}
+          />
         </Form.Item>
 
         <Divider plain style={{ fontSize: 12, color: '#8c8c8c' }}>Metadata</Divider>

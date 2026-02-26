@@ -8,6 +8,7 @@
  *   const { flags, isLoading } = useFlags('core')   // filter by capability
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { message } from 'antd'
 import { apiFetch, apiPatch, apiPost } from '@utils/api'
 import type { ControlFlag, FlagStatus } from '@types'
 
@@ -35,6 +36,7 @@ export function useToggleFlag() {
     mutationFn: ({ capabilityName, controlName }: { capabilityName: string; controlName: string }) =>
       apiPatch<ControlFlag>(`/api/internal/flags/${capabilityName}/${controlName}`, {}),
     onSuccess: (updated) => {
+      void message.success(`"${updated.controlName}" turned ${updated.state ? 'ON ✅' : 'OFF ⛔'}`)
       queryClient.setQueryData<ControlFlag[]>(['flags'], (prev) =>
         prev?.map((f) =>
           f.capabilityName === updated.capabilityName && f.controlName === updated.controlName
@@ -75,6 +77,7 @@ export function useUpdateFlag() {
         updatedBy: 'admin',
       }),
     onSuccess: (updated) => {
+      void message.success(`"${updated.controlName}" saved successfully`)
       queryClient.setQueryData<ControlFlag[]>(['flags'], (prev) =>
         prev?.map((f) =>
           f.capabilityName === updated.capabilityName && f.controlName === updated.controlName
@@ -99,6 +102,7 @@ export function useDeleteFlag() {
         updatedBy: 'admin',
       }),
     onSuccess: (updated) => {
+      void message.warning(`"${updated.controlName}" has been deleted`)
       queryClient.setQueryData<ControlFlag[]>(['flags'], (prev) =>
         prev?.map((f) =>
           f.capabilityName === updated.capabilityName && f.controlName === updated.controlName
@@ -123,6 +127,7 @@ export function useCreateFlag() {
       status: FlagStatus
     }) => apiPost<ControlFlag>('/api/internal/flags', { ...payload, updatedBy: 'admin' }),
     onSuccess: (created) => {
+      void message.success(`"${created.controlName}" created under "${created.capabilityName}"`)
       queryClient.setQueryData<ControlFlag[]>(['flags'], (prev) =>
         prev ? [created, ...prev] : [created],
       )

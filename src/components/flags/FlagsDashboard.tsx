@@ -98,6 +98,10 @@ export default function FlagsDashboard() {
       <EditFlagDrawer
         flag={editFlag}
         onClose={() => setEditFlag(null)}
+        onSaveSuccess={(updated) => {
+          setEditFlag(null)
+          setViewFlag(updated)
+        }}
         updateFlag={updateFlag}
         deleteFlag={deleteFlag}
       />

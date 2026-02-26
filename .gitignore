@@ -14,5 +14,9 @@ todos.json
 
 # Azurite (VS Code extension) local emulator data
 __azurite_db_*
+__blobstorage__/
+__queuestorage__/
+AzuriteConfig
+azurite.log
 .azurite/
 

@@ -1,0 +1,27 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build output (rebuilt inside Docker)
+.output
+dist
+
+# Azurite local storage (never ship to prod)
+__azurite_db_*.json
+__blobstorage__
+__queuestorage__
+AzuriteConfig
+
+# Local env files — secrets are passed as runtime env vars
+.env
+.env.local
+.env.*.local
+
+# Dev tooling
+.vscode
+.git
+*.md
+
+# OS artefacts
+.DS_Store
+Thumbs.db

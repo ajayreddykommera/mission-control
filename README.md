@@ -1,193 +1,286 @@
-Welcome to your new TanStack Start app! 
+# Mission Control
 
-# Getting Started
+A full-stack feature flag management platform built with **TanStack Start**, **Ant Design**, and **Azure Table Storage**.  
+Admins can create, toggle, edit, and audit feature flags across `dev`, `stage`, and `prod` environments — without deploying code.
 
-To run this application:
+---
+
+## Features
+
+- **Feature flag CRUD** — create, view, edit, soft-delete flags grouped by capability
+- **Live toggle** with confirmation — flip flags on/off with a popconfirm guard
+- **Audit history** — every change is recorded (who, what, when) with a computed diff description
+- **Flags history timeline** — per-flag or global changelog with search and pagination
+- **Duplicate detection** — real-time check on creation (PK+RK composite uniqueness)
+- **Auto-slug** — label → control name auto-fill, stops on manual edit
+- **Environment sidebar links** — jump directly to sibling `dev / stage / prod` deployments
+- **Environment badge** in the header — always shows which env you are on
+- **Success toasts** on every mutation
+- **Unsaved-changes guard** on the edit drawer
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | [TanStack Start](https://tanstack.com/start) (React 19, SSR) |
+| UI | [Ant Design 6](https://ant.design) |
+| Routing | [TanStack Router](https://tanstack.com/router) (file-based) |
+| Data fetching | [TanStack Query](https://tanstack.com/query) |
+| Tables | [TanStack Table](https://tanstack.com/table) |
+| Storage | [Azure Table Storage](https://learn.microsoft.com/azure/storage/tables/) |
+| Local storage emulator | [Azurite](https://learn.microsoft.com/azure/storage/common/storage-use-azurite) |
+| Build / bundler | Vite + Nitro |
+| Package manager | pnpm |
+
+---
+
+## Prerequisites
+
+- **Node.js** ≥ 22
+- **pnpm** ≥ 9 — `npm install -g pnpm`
+- **Azurite** (for local dev) — `npm install -g azurite`
+
+---
+
+## Getting Started (Local)
+
+### 1. Install dependencies
 
 ```bash
 pnpm install
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local`:
+
+```env
+# Use local Azurite emulator
+AZURE_TABLES_ENV=local
+AZURE_STORAGE_CONNECTION_STRING=UseDevelopmentStorage=true
+
+# Label and link sibling deployments (optional for local dev)
+APP_ENV=dev
+APP_DEV_URL=http://localhost:3000
+APP_STAGE_URL=
+APP_PROD_URL=
+```
+
+### 3. Start Azurite
+
+In a separate terminal:
+
+```bash
+azurite --silent --location . --debug azurite.log
+```
+
+Or use the [VS Code Azurite extension](https://marketplace.visualstudio.com/items?itemName=Azurite.azurite) — click **Start Blob Service**, **Start Queue Service**, **Start Table Service** in the status bar.
+
+### 4. Seed the database
+
+Creates the Azure Tables and populates them with sample flags and history:
+
+```bash
+pnpm seed
+```
+
+### 5. Start the dev server
+
+```bash
 pnpm dev
 ```
 
-# Building For Production
+Open [http://localhost:3000](http://localhost:3000).
 
-To build this application for production:
+---
+
+## Environment Variables
+
+### Server-side (runtime — never exposed to the browser)
+
+| Variable | Required | Description |
+|---|---|---|
+| `AZURE_TABLES_ENV` | No (default: `local`) | `local` = Azurite, `azure` = real Azure Tables |
+| `AZURE_STORAGE_CONNECTION_STRING` | When `local` | Azurite connection string |
+| `AZURE_STORAGE_ACCOUNT_URL` | When `azure` | `https://<account>.table.core.windows.net` |
+| `AZURE_TENANT_ID` | When `azure` | Service principal tenant ID |
+| `AZURE_CLIENT_ID` | When `azure` | Service principal client ID |
+| `AZURE_CLIENT_SECRET` | When `azure` | Service principal secret |
+
+### Client-side (build-time — baked into the JS bundle, non-sensitive only)
+
+| Variable | Default | Description |
+|---|---|---|
+| `APP_ENV` | `dev` | Which environment this deployment is (`dev` \| `stage` \| `prod`) |
+| `APP_DEV_URL` | `""` | Full URL of the dev deployment |
+| `APP_STAGE_URL` | `""` | Full URL of the staging deployment |
+| `APP_PROD_URL` | `""` | Full URL of the production deployment |
+
+> **Note:** These variables are substituted by Vite at build time via the `APP_` prefix configured in `vite.config.ts`. They appear in the compiled JS bundle — never put secrets here.
+
+---
+
+## Multi-Environment Setup
+
+Each environment is a **separate deployment** with its own Azure Storage account and tables. The sidebar shows links to sibling environments; the current environment is highlighted with a coloured badge in the header.
+
+Set `VITE_APP_ENV`, `VITE_DEV_URL`, `VITE_STAGE_URL`, and `VITE_PROD_URL` in each deployment's CI/CD pipeline to wire up the cross-env navigation automatically.
+
+---
+
+## API Routes
+
+### Internal (admin — write access)
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/internal/flags` | List all flags |
+| `POST` | `/api/internal/flags` | Create a flag |
+| `GET` | `/api/internal/flags/:capability` | List flags by capability |
+| `PATCH` | `/api/internal/flags/:capability/:control` | Update / toggle / delete a flag |
+| `GET` | `/api/internal/flags/history` | Full audit history |
+| `GET` | `/api/internal/flags/:capability/:control/history` | Per-flag audit history |
+
+### Public (read-only — no auth required)
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/public/flags` | All active flags (minimal projection) |
+| `GET` | `/api/public/flags/:capability` | Active flags for a capability |
+| `GET` | `/api/public/flags/:capability/:control` | Single active flag state |
+
+---
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── flags/           # Feature flag UI (dashboard, table, drawers)
+│   ├── flags-history/   # History page (timeline, table, controls)
+│   └── layout/          # AppHeader, AppSider, AppLayout, AppFooter
+├── config/
+│   └── env.ts           # Validated server + client env exports
+├── hooks/
+│   ├── useFlags.ts      # TanStack Query hooks for flag mutations
+│   └── useHistory.ts    # TanStack Query hooks for history
+├── lib/
+│   ├── azure-tables.ts        # Azure Table Storage client factory
+│   ├── flags-store.ts         # Flag CRUD operations
+│   └── flags-history-store.ts # History read operations
+├── middleware/
+│   └── auth.ts          # isAdmin() — replace with real SSO check
+├── routes/
+│   ├── __root.tsx       # App shell (QueryClient, StyleProvider)
+│   ├── index.tsx        # Feature Flags page
+│   ├── history.tsx      # Flags History page
+│   └── api/
+│       ├── internal/    # Admin API routes (CRUD + history)
+│       └── public/      # Public read-only API routes
+├── scripts/
+│   └── seed.ts          # Local dev database seeder
+├── types/
+│   └── flags.ts         # ControlFlag, ControlFlagHistory, PublicFlag types
+└── utils/
+    ├── api.ts           # apiFetch / apiPatch / apiPost helpers
+    ├── date.ts          # Date formatting utilities
+    └── historyUtils.tsx # Change description renderer
+```
+
+---
+
+## Building for Production
 
 ```bash
 pnpm build
 ```
 
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+Output is written to `.output/`. The server entry point is `.output/server/index.mjs`.
 
 ```bash
-pnpm test
+# Preview the production build locally
+pnpm preview
 ```
 
-## Styling
+---
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+## Docker
 
-### Removing Tailwind CSS
+### Build
 
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `pnpm add @tailwindcss/vite tailwindcss --dev`
-
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
+```bash
+docker build \
+  --build-arg APP_ENV=prod \
+  --build-arg DEV_URL=https://dev.mission-control.example.com \
+  --build-arg STAGE_URL=https://stage.mission-control.example.com \
+  --build-arg PROD_URL=https://mission-control.example.com \
+  -t mission-control:prod .
 ```
 
-Then anywhere in your JSX you can use it like so:
+### Run
 
-```tsx
-<Link to="/about">About</Link>
+```bash
+docker run -p 3000:3000 \
+  -e AZURE_TABLES_ENV=azure \
+  -e AZURE_STORAGE_ACCOUNT_URL=https://<account>.table.core.windows.net \
+  -e AZURE_TENANT_ID=<tenant-id> \
+  -e AZURE_CLIENT_ID=<client-id> \
+  -e AZURE_CLIENT_SECRET=<secret> \
+  mission-control:prod
 ```
 
-This will create a link that will navigate to the `/about` route.
+> Runtime secrets are injected via environment variables — never baked into the image.
 
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+### Azure Container Apps (recommended)
 
-### Using A Layout
+1. Push the image to **Azure Container Registry**
+2. Create a **Container App** pointing to the image
+3. Set environment variables in the Container App's **Secrets** and **Environment variables** blade (or reference Key Vault secrets)
+4. Set scale rules as needed — the app is stateless and scales to zero safely
 
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
+---
 
-Here is an example layout that includes a header:
+## Azure Table Storage Schema
 
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+### `ControlFlagsTable`
 
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
+| Field | Azure Key | Type | Description |
+|---|---|---|---|
+| `capabilityName` | PartitionKey | string | Groups related flags (e.g. `payments`) |
+| `controlName` | RowKey | string | Unique within a capability (e.g. `enable-checkout-v2`) |
+| `label` | — | string | Human-readable display name |
+| `description` | — | string | What this flag controls |
+| `state` | — | boolean | `true` = enabled |
+| `status` | — | `active \| inactive \| deleted` | Lifecycle status |
+| `updatedBy` | — | string | Identity that last changed this flag |
+| `lastUpdatedAt` | — | ISO-8601 string | Timestamp of last change |
+| `version` | — | number | Monotonically increasing for optimistic concurrency |
 
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
+### `ControlFlagsHistoryTable`
 
-## Server Functions
+| Field | Azure Key | Type | Description |
+|---|---|---|---|
+| `controlName` | PartitionKey | string | Groups history by flag |
+| `version_timestamp` | RowKey | string | Ensures chronological order |
+| `capabilityName` | — | string | Capability at time of change |
+| `state` | — | boolean | State after change |
+| `status` | — | string | Status after change |
+| `updatedBy` | — | string | Who made the change |
+| `updatedAt` | — | ISO-8601 string | When the change was made |
+| `changeDescription` | — | string | Human-readable diff (e.g. `State: OFF → ON`) |
 
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
+---
 
-```tsx
-import { createServerFn } from '@tanstack/react-start'
+## Roadmap / Known TODOs
 
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+- [ ] Replace `isAdmin()` stub in `src/middleware/auth.ts` with real SSO (Azure AD / MSAL)
+- [ ] Replace hardcoded `MOCK_USER` in `AppHeader` with authenticated identity
+- [ ] Replace hardcoded `updatedBy: 'admin'` in hooks with real user UPN from auth
+- [ ] Add role-based access control (admin vs read-only) enforced at the API layer
+- [ ] Unit + integration tests for the flags store and API routes

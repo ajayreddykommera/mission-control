@@ -29,6 +29,7 @@ import {
   Tag,
   Button,
   Input,
+  Empty,
   Typography,
   Space,
   Tooltip,
@@ -90,11 +91,9 @@ const baseColumns = [
   col.accessor('lastUpdatedAt', {
     header: 'Last Updated',
     cell: (info) => (
-      <Tooltip title={new Date(info.getValue()).toISOString()}>
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          {new Date(info.getValue()).toLocaleString()}
-        </Text>
-      </Tooltip>
+      <Text type="secondary" style={{ fontSize: 12 }}>
+        {new Date(info.getValue()).toLocaleString()}
+      </Text>
     ),
   }),
 ]
@@ -122,7 +121,7 @@ export default function FlagPanel({
 }: FlagPanelProps) {
   const [searchText,    setSearchText]    = useState('')
   const [globalFilter,  setGlobalFilter]  = useState('')
-  const [sorting,       setSorting]       = useState<SortingState>([])
+  const [sorting,       setSorting]       = useState<SortingState>([{ id: 'lastUpdatedAt', desc: true }])
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all')
   const [tablePage,     setTablePage]     = useState(1)
   const [tablePageSize, setTablePageSize] = useState(10)
@@ -302,7 +301,7 @@ export default function FlagPanel({
                   </strong>.
                 </span>
                 <span style={{ color: '#8c8c8c', fontSize: 12 }}>
-                  This will mark the flag as <Tag color="error" style={{ margin: 0 }}>Deleted</Tag> and it will no longer be active.
+                  This will mark the flag as <Tag color="error" style={{ margin: 0 }}>Deleted</Tag> and it will no longer be active and cannot be restored.
                 </span>
               </Flex>
             }
@@ -398,6 +397,7 @@ export default function FlagPanel({
             </span>
           </Flex>
         )}
+
       </div>
 
       {/* ── Status tabs ── */}
@@ -425,6 +425,29 @@ export default function FlagPanel({
         columns={[flagColumn, ...antColumns, actionColumn]}
         loading={isLoading}
         rowClassName={(r) => (r.status === 'deleted' ? 'row-deleted' : '')}
+        onRow={(record) => ({
+          onClick: () => onView(record),
+          style: { cursor: 'pointer' },
+        })}
+        locale={{
+          emptyText: (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              style={{ padding: '32px 0' }}
+              description={
+                searchText
+                  ? `No flags match "${searchText}"`
+                  : statusFilter === 'deleted'
+                  ? 'No deleted flags — keeping things tidy!'
+                  : statusFilter === 'inactive'
+                  ? 'No inactive flags here'
+                  : statusFilter === 'active'
+                  ? 'No active flags yet — create one!'
+                  : 'No flags yet — create your first one!'
+              }
+            />
+          ),
+        }}
         pagination={{
           current:         tablePage,
           pageSize:        tablePageSize,
@@ -440,7 +463,10 @@ export default function FlagPanel({
         size="middle"
       />
 
-      <style>{`.row-deleted td { background-color: #fafafa !important; }`}</style>
+      <style>{`
+        .row-deleted td { background-color: #fafafa !important; }
+        .ant-table-column-sort { background: transparent !important; }
+      `}</style>
     </div>
   )
 }

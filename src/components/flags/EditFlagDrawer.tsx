@@ -24,37 +24,59 @@ import {
   Divider,
   Tag,
   Popconfirm,
+  Modal,
 } from 'antd'
 import { DeleteOutlined } from '@ant-design/icons'
 import type { ControlFlag } from '@types'
 import type { useUpdateFlag, useDeleteFlag } from '@hooks/useFlags'
 
 interface EditFlagDrawerProps {
-  flag:       ControlFlag | null
-  onClose:    () => void
-  updateFlag: ReturnType<typeof useUpdateFlag>
-  deleteFlag: ReturnType<typeof useDeleteFlag>
+  flag:          ControlFlag | null
+  onClose:       () => void
+  onSaveSuccess: (updated: ControlFlag) => void
+  updateFlag:    ReturnType<typeof useUpdateFlag>
+  deleteFlag:    ReturnType<typeof useDeleteFlag>
 }
 
 export default function EditFlagDrawer({
   flag,
   onClose,
+  onSaveSuccess,
   updateFlag,
   deleteFlag,
 }: EditFlagDrawerProps) {
   const [form] = Form.useForm()
   const stateValue = Form.useWatch('state', form)
 
+  // Called by Cancel button / drawer X — checks for unsaved changes.
   function handleClose() {
+    if (form.isFieldsTouched()) {
+      Modal.confirm({
+        title: 'Discard unsaved changes?',
+        content: 'You have unsaved changes that will be lost if you close now.',
+        okText: 'Discard',
+        okButtonProps: { danger: true },
+        cancelText: 'Keep editing',
+        onOk: () => {
+          form.resetFields()
+          onClose()
+        },
+      })
+      return
+    }
     form.resetFields()
     onClose()
+  }
+
+  // Called only after a successful save — bypasses dirty check.
+  function closeAfterSave(updated: ControlFlag) {
+    form.resetFields()
+    onSaveSuccess(updated)
   }
 
   function handleSave() {
     if (!flag) return
     form.validateFields().then((values) => {
-      // Single PATCH call — server auto-generates the audit description from
-      // a before→after diff and writes one history entry.
       updateFlag.mutate(
         {
           capabilityName: flag.capabilityName,
@@ -64,7 +86,7 @@ export default function EditFlagDrawer({
           status:         values.status,
           state:          values.state,
         },
-        { onSuccess: handleClose },
+        { onSuccess: closeAfterSave },
       )
     })
   }
@@ -73,7 +95,7 @@ export default function EditFlagDrawer({
     if (!flag) return
     deleteFlag.mutate(
       { capabilityName: flag.capabilityName, controlName: flag.controlName },
-      { onSuccess: handleClose },
+      { onSuccess: () => { form.resetFields(); onClose() } },
     )
   }
 
@@ -106,7 +128,7 @@ export default function EditFlagDrawer({
                   </strong>.
                 </span>
                 <span style={{ color: '#8c8c8c', fontSize: 12 }}>
-                  This will mark the flag as <Tag color="error" style={{ margin: 0 }}>Deleted</Tag> and it will no longer be active.
+                  This will mark the flag as <Tag color="error" style={{ margin: 0 }}>Deleted</Tag> and it will no longer be active and cannot be restored.
                 </span>
               </Flex>
             }

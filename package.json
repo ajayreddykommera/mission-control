@@ -9,6 +9,9 @@
     "dev": "vite dev --port 3000",
     "seed": "tsx src/scripts/seed.ts",
     "build": "vite build",
+    "build:dev": "vite build --mode dev",
+    "build:stage": "vite build --mode stage",
+    "build:prod": "vite build --mode prod",
     "preview": "vite preview",
     "test": "vitest run"
   },
